@@ -1,6 +1,6 @@
 # 围棋 AI 项目报告
 
-项目地址：https://github.com/Acoustasonic/ai-course-hw1
+项目地址：https://github.com/Acoustasonic/AI_DA_hw1/
 
 ## 1. 项目整体介绍
 
