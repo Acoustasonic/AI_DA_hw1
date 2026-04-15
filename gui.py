@@ -16,7 +16,7 @@ class GoApp(tk.Tk):
 
     def __init__(self):
         super().__init__()
-        self.title("围棋 AI 作业演示")
+        self.title("围棋 AI 作业")
         self.resizable(False, False)
 
         self.board_size_var = tk.IntVar(value=5)
