@@ -1,0 +1,286 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{proofname=\heiti{证明}}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 8]{iidef}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 8 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item 两状态 MDP
+
+状态集合 \(\mathcal S=\{s_0,s_1\}\)，动作集合
+\(\mathcal A=\{a_0,a_1\}\)，折扣因子 \(\gamma=0.9\)。
+
+\begin{solution}
+\textbf{(1)}
+
+策略为
+\[
+\pi(s_0)=a_1,\qquad \pi(s_1)=a_0,
+\]
+题目中还给出
+\[
+U^\pi(s_0)=5.
+\]
+状态 \(s_1\) 下执行 \(a_0\)：以 \(0.8\) 概率转移到 \(s_0\)，奖励为 \(2\)；以 \(0.2\) 概率转移到 \(s_1\)，奖励为 \(0\)。Bellman 方程为
+\[
+\begin{aligned}
+U^\pi(s_1)
+&=0.8\left(2+\gamma U^\pi(s_0)\right)
+  +0.2\left(0+\gamma U^\pi(s_1)\right)\\
+&=0.8(2+0.9\times 5)+0.2\times0.9\,U^\pi(s_1).
+\end{aligned}
+\]
+整理得
+\[
+(1-0.18)U^\pi(s_1)=5.2,
+\]
+解得
+\[
+U^\pi(s_1)=\frac{5.2}{0.82}\approx 6.3415.
+\]
+
+\textbf{(2)}
+
+看 \(s_0\) 改选 \(a_0\) 时的动作价值。执行 \(a_0\) 时，以 \(0.7\) 概率转移到 \(s_0\)，奖励为 \(1\)；以 \(0.3\) 概率转移到 \(s_1\)，奖励为 \(3\)。于是
+\[
+\begin{aligned}
+Q^\pi(s_0,a_0)
+&=0.7\left(1+\gamma U^\pi(s_0)\right)
+ +0.3\left(3+\gamma U^\pi(s_1)\right)\\
+&=0.7(1+0.9\times5)
+ +0.3(3+0.9\times6.3415)\\
+&\approx 6.4622.
+\end{aligned}
+\]
+这里
+\[
+Q^\pi(s_0,a_0)\approx 6.4622 > U^\pi(s_0)=5,
+\]
+\(s_0\) 处把策略从 \(a_1\) 改为 \(a_0\) 会提高价值，即
+\[
+\pi_{\mathrm{new}}(s_0)=a_0.
+\]
+\end{solution}
+
+\item \(3\times3\) Gridworld
+
+状态编号如下：
+\[
+\begin{matrix}
+s_1&s_2&s_3\\
+s_4&s_5&s_6\\
+s_7&s_8&s_9
+\end{matrix}
+\]
+其中 \(s_9\) 为终止状态，\(V(s_9)=0\)。动作集合为
+\[
+\mathcal A=\{\mathrm{Up},\mathrm{Down},\mathrm{Left},\mathrm{Right}\}.
+\]
+每走一步奖励 \(R=-1\)，折扣因子 \(\gamma=1\)。若动作撞墙，则停留在原状态。初始价值为
+\[
+V_0(s)=0,\qquad s\in\{1,2,\ldots,9\},
+\]
+初始策略为均匀随机策略
+\[
+\pi_0(a|s)=0.25.
+\]
+
+\begin{solution}
+\textbf{(1)}
+
+第一次迭代用
+\[
+V_{k+1}(s)=\sum_a \pi_0(a|s)\left[-1+V_k(s')\right].
+\]
+由 \(V_0(s)=0\)，所有非终止状态都有
+\[
+V_1(s)=-1,\qquad s=1,2,\ldots,8.
+\]
+终止状态仍为
+\[
+V_1(s_9)=0.
+\]
+
+\textbf{(2)}
+
+第二次迭代时，非终止后继状态的 \(V_1\) 为 \(-1\)，终止状态 \(s_9\) 的价值为 \(0\)。
+
+对 \(s_5\)，四个方向分别到达 \(s_2,s_8,s_4,s_6\)，都不是终止状态，故
+\[
+V_2(s_5)=\frac14[(-1-1)+(-1-1)+(-1-1)+(-1-1)]=-2.
+\]
+
+对 \(s_6\)，向上到 \(s_3\)，向下到 \(s_9\)，向左到 \(s_5\)，向右撞墙仍在 \(s_6\)。代入得
+\[
+V_2(s_6)=\frac14[(-1-1)+(-1+0)+(-1-1)+(-1-1)]
+=-\frac74=-1.75.
+\]
+
+对 \(s_8\)，向上到 \(s_5\)，向下撞墙仍在 \(s_8\)，向左到 \(s_7\)，向右到 \(s_9\)。代入得
+\[
+V_2(s_8)=\frac14[(-1-1)+(-1-1)+(-1-1)+(-1+0)]
+=-\frac74=-1.75.
+\]
+
+\textbf{(3)}
+
+用 \(V_2\) 做策略改进：
+\[
+\pi_1(s)=\arg\max_a\left[-1+V_2(s')\right].
+\]
+用到的几个值是
+\[
+\begin{gathered}
+V_2(s_2)=V_2(s_3)=V_2(s_4)=V_2(s_5)=-2,\\
+V_2(s_6)=V_2(s_8)=-1.75,\\
+V_2(s_9)=0.
+\end{gathered}
+\]
+
+在 \(s_5\) 处：
+\[
+\begin{array}{c|c}
+\toprule
+\text{动作} & -1+V_2(s')\\
+\midrule
+\mathrm{Up} & -3\\
+\mathrm{Down} & -2.75\\
+\mathrm{Left} & -3\\
+\mathrm{Right} & -2.75\\
+\bottomrule
+\end{array}
+\]
+最优动作有两个：
+\[
+\pi_1(s_5)\in\{\mathrm{Down},\mathrm{Right}\}.
+\]
+
+在 \(s_6\) 处：
+\[
+\begin{array}{c|c}
+\toprule
+\text{动作} & -1+V_2(s')\\
+\midrule
+\mathrm{Up} & -3\\
+\mathrm{Down} & -1\\
+\mathrm{Left} & -3\\
+\mathrm{Right} & -2.75\\
+\bottomrule
+\end{array}
+\]
+最优动作为
+\[
+\pi_1(s_6)=\mathrm{Down}.
+\]
+\end{solution}
+
+\item Monte Carlo 价值估计
+
+状态集合 \(\mathcal S=\{A,B\}\)，终止状态 \(T\)，折扣因子
+\(\gamma=1\)。已采样得到三条轨迹：
+\[
+\begin{aligned}
+&1:\quad A \xrightarrow{R=-1} B \xrightarrow{R=-1} A
+\xrightarrow{R=-2} B \xrightarrow{R=+6} T,\\
+&2:\quad B \xrightarrow{R=-2} B \xrightarrow{R=-1} A
+\xrightarrow{R=+5} T,\\
+&3:\quad A \xrightarrow{R=-1} A \xrightarrow{R=-3} B
+\xrightarrow{R=+4} T.
+\end{aligned}
+\]
+
+\begin{solution}
+\textbf{(1) First-visit Monte Carlo}
+
+先算每条轨迹中每个状态第一次出现时的回报。
+
+第 1 条轨迹：
+\[
+G(A)= -1-1-2+6=2,\qquad
+G(B)= -1-2+6=3.
+\]
+第 2 条轨迹：
+\[
+G(B)= -2-1+5=2,\qquad
+G(A)=5.
+\]
+第 3 条轨迹：
+\[
+G(A)= -1-3+4=0,\qquad
+G(B)=4.
+\]
+first-visit 估计为
+\[
+V(A)=\frac{2+5+0}{3}=\frac73\approx 2.3333,
+\]
+\[
+V(B)=\frac{3+2+4}{3}=3.
+\]
+
+\textbf{(2) Every-visit Monte Carlo}
+
+every-visit 要把同一条轨迹里同一状态的多次出现都计入平均。
+
+状态 \(A\) 的所有回报为
+\[
+2,\ 4,\ 5,\ 0,\ 1.
+\]
+于是
+\[
+V(A)=\frac{2+4+5+0+1}{5}=\frac{12}{5}=2.4.
+\]
+
+状态 \(B\) 的所有回报为
+\[
+3,\ 6,\ 2,\ 4,\ 4.
+\]
+于是
+\[
+V(B)=\frac{3+6+2+4+4}{5}=\frac{19}{5}=3.8.
+\]
+\end{solution}
+
+\end{enumerate}
+\end{document}
