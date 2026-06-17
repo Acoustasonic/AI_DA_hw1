@@ -1,0 +1,189 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{proofname=\heiti{证明}}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 1]{iidef}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 1 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item 搜索问题形式化
+
+\begin{solution}
+\textbf{(a) 四枚硬币翻转}
+
+状态可以写成四元组
+\[
+s=(x_1,x_2,x_3,x_4),\qquad x_i\in\{\text{正},\text{反}\}.
+\]
+初始状态为
+\[
+s_0=(\text{正},\text{反},\text{正},\text{反}),
+\]
+目标状态为
+\[
+s_g=(\text{正},\text{正},\text{正},\text{正}).
+\]
+每次动作选择连续的三枚硬币并翻转，可选动作是
+\[
+\mathrm{flip}(1,2,3),\qquad \mathrm{flip}(2,3,4).
+\]
+转移模型为：被选中的硬币正反互换，未被选中的硬币保持不变。每次翻转代价为 1，总路径代价就是翻转次数。
+
+\textbf{(b) 网格机器人}
+
+状态可设为机器人所在格子坐标
+\[
+s=(i,j).
+\]
+若题目只要求找一条从起点到终点的路径，状态中不需要记录历史路径。初始状态为
+\[
+S=(1,1),
+\]
+目标状态为
+\[
+T=(N,N).
+\]
+动作集合为
+\[
+\{\text{上},\text{下},\text{左},\text{右}\}.
+\]
+若移动后的格子仍在边界内且不是障碍格 \(O\)，则机器人移动到该格；否则该动作非法。每移动一格代价为 1，因此总代价为路径长度。
+\end{solution}
+
+\item 城市路网搜索
+
+\begin{solution}
+根据图中边权，主要边为
+\[
+\begin{gathered}
+S\!-\!A=4,\ S\!-\!B=3,\ S\!-\!C=5,\ A\!-\!B=2,\ B\!-\!C=2,\\
+A\!-\!D=5,\ B\!-\!D=4,\ B\!-\!E=3,\ C\!-\!F=4,\\
+D\!-\!E=2,\ D\!-\!H=3,\ E\!-\!H=4,\ E\!-\!K=4,\ E\!-\!F=3,\\
+F\!-\!K=5,\ H\!-\!T=5,\ K\!-\!T=4.
+\end{gathered}
+\]
+
+\textbf{(a) BFS}
+
+按字母序扩展相邻节点，BFS 的扩展顺序为
+\[
+S,A,B,C,D,E,F,H,K,T.
+\]
+对应搜索树的父节点如下：
+\[
+\begin{array}{c|ccccccccc}
+\toprule
+\text{节点} & A & B & C & D & E & F & H & K & T\\
+\midrule
+\text{父节点} & S & S & S & A & B & C & D & E & H\\
+\bottomrule
+\end{array}
+\]
+因此 BFS 找到的路径为
+\[
+S\rightarrow A\rightarrow D\rightarrow H\rightarrow T.
+\]
+BFS 只按层数搜索，不考虑边权，所以这条路径不一定是总代价最小的路径。
+
+\textbf{(b) UCS}
+
+UCS 每次扩展累计代价 \(g(n)\) 最小的节点。扩展顺序为
+\[
+\begin{array}{c|c|c}
+\toprule
+\text{顺序} & \text{节点} & g(n)\\
+\midrule
+1&S&0\\
+2&B&3\\
+3&A&4\\
+4&C&5\\
+5&E&6\\
+6&D&7\\
+7&F&9\\
+8&H&10\\
+9&K&10\\
+10&T&14\\
+\bottomrule
+\end{array}
+\]
+得到最短路径
+\[
+S\rightarrow B\rightarrow E\rightarrow K\rightarrow T,
+\]
+总代价为
+\[
+3+3+4+4=14.
+\]
+
+\textbf{(c) A*}
+
+使用题目给出的启发函数，令
+\[
+f(n)=g(n)+h(n).
+\]
+按 \(f\) 最小扩展，平局按字母序处理。主要过程如下：
+\[
+\begin{array}{c|c|c|l}
+\toprule
+\text{步} & \text{扩展节点} & g & \text{Open List 主要节点 }(g,f)\\
+\midrule
+1&S&0&B(3,12), A(4,15), C(5,16)\\
+2&B&3&E(6,12), D(7,14), A(4,15), C(5,16)\\
+3&E&6&K(10,13), D(7,14), H(10,14), A(4,15), C(5,16), F(9,17)\\
+4&K&10&D(7,14), H(10,14), T(14,14), A(4,15), C(5,16), F(9,17)\\
+5&D&7&H(10,14), T(14,14), A(4,15), C(5,16), F(9,17)\\
+6&H&10&T(14,14), A(4,15), C(5,16), F(9,17)\\
+7&T&14&\text{结束}\\
+\bottomrule
+\end{array}
+\]
+最终路径同样为
+\[
+S\rightarrow B\rightarrow E\rightarrow K\rightarrow T,
+\]
+总代价为 \(14\)。
+\end{solution}
+
+\end{enumerate}
+\end{document}

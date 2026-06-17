@@ -1,0 +1,172 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{proofname=\heiti{证明}}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 4]{iidef}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 4 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item 线性回归
+
+\begin{solution}
+数据为
+\[
+x=[6,8,10,12,13,14,15,16],
+\]
+\[
+y=[68,73,82,85,87,91,92,98].
+\]
+使用最小二乘拟合
+\[
+\hat y=wx+b.
+\]
+设样本均值为 \(\bar x,\bar y\)，则
+\[
+w=\frac{\sum_i (x_i-\bar x)(y_i-\bar y)}{\sum_i (x_i-\bar x)^2},
+\qquad
+b=\bar y-w\bar x.
+\]
+代入数据得到
+\[
+w=2.8304,\qquad b=51.2427.
+\]
+所以拟合直线为
+\[
+\hat y=2.8304x+51.2427.
+\]
+
+预测值如下：
+\[
+\begin{array}{c|c|c}
+\toprule
+x & y & \hat y\\
+\midrule
+6 & 68 & 68.225\\
+8 & 73 & 73.886\\
+10 & 82 & 79.547\\
+12 & 85 & 85.208\\
+13 & 87 & 88.038\\
+14 & 91 & 90.868\\
+15 & 92 & 93.699\\
+16 & 98 & 96.529\\
+\bottomrule
+\end{array}
+\]
+
+平均绝对误差为
+\[
+\mathrm{MAE}
+=\frac1n\sum_i |y_i-\hat y_i|
+=1.0139.
+\]
+均方误差为
+\[
+\mathrm{MSE}
+=\frac1n\sum_i (y_i-\hat y_i)^2
+=1.6301.
+\]
+\end{solution}
+
+\item Logistic 回归
+
+\begin{solution}
+Logistic 回归模型为
+\[
+z=w^\top x+b,
+\]
+\[
+h_{w,b}(x)=\sigma(z)=\frac{1}{1+e^{-z}}.
+\]
+模型输出 \(\hat y=h_{w,b}(x)\)。若需要二分类标签，可取阈值 \(0.5\)：当 \(\hat y\ge 0.5\) 时判为 1，否则判为 0。
+
+单样本交叉熵损失为
+\[
+L(w,b)
+=-\left[y\log h+(1-y)\log(1-h)\right],
+\]
+其中 \(h=h_{w,b}(x)\)。又有
+\[
+\sigma'(z)=\sigma(z)(1-\sigma(z))=h(1-h).
+\]
+先对 \(z\) 求导：
+\[
+\frac{\partial L}{\partial z}
+=
+\frac{\partial L}{\partial h}\frac{\partial h}{\partial z}.
+\]
+其中
+\[
+\frac{\partial L}{\partial h}
+=-\frac{y}{h}+\frac{1-y}{1-h},
+\]
+所以
+\[
+\frac{\partial L}{\partial z}
+=
+\left(-\frac{y}{h}+\frac{1-y}{1-h}\right)h(1-h)
+=h-y.
+\]
+由于
+\[
+\frac{\partial z}{\partial w_i}=x_i,\qquad
+\frac{\partial z}{\partial b}=1,
+\]
+得到
+\[
+\frac{\partial L}{\partial w_i}=(h-y)x_i,
+\]
+\[
+\frac{\partial L}{\partial b}=h-y.
+\]
+用学习率 \(\alpha>0\) 做梯度下降，更新公式为
+\[
+w_i\leftarrow w_i-\alpha(h-y)x_i,
+\]
+\[
+b\leftarrow b-\alpha(h-y).
+\]
+\end{solution}
+
+\end{enumerate}
+\end{document}

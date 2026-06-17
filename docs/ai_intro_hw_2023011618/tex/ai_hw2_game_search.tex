@@ -1,0 +1,209 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{proofname=\heiti{证明}}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 2]{iidef}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 2 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item Minimax 与 alpha-beta 剪枝
+
+\begin{solution}
+\textbf{(1) Minimax}
+
+底层 6 个 MAX 节点从左到右记为 \(M_1,\ldots,M_6\)。它们的取值为
+\[
+\begin{array}{c|c|c}
+\toprule
+\text{节点} & \text{子 MIN 值} & \text{MAX 值}\\
+\midrule
+M_1 & \min(5,8)=5,\ \min(2,9)=2 & 5\\
+M_2 & 7,\ 0 & 7\\
+M_3 & 4,\ \min(6,1)=1 & 4\\
+M_4 & \min(3,6)=3,\ 8 & 8\\
+M_5 & 9,\ 7 & 9\\
+M_6 & 2,\ \min(1,5)=1 & 2\\
+\bottomrule
+\end{array}
+\]
+左侧 MIN 节点的值为
+\[
+\min(5,7,4)=4,
+\]
+右侧 MIN 节点的值为
+\[
+\min(8,9,2)=2.
+\]
+根节点是 MAX，因此
+\[
+\max(4,2)=4.
+\]
+所以根节点最终值为 \(4\)，应选择左分支。
+
+\textbf{(2) alpha-beta 剪枝}
+
+按从左到右的顺序生成子节点：
+\begin{itemize}
+    \item 左侧 MIN 的第二个 MAX 节点中，先得到值 \(7\)，已经不可能让父 MIN 优于当前 \(\beta=5\)，剪去叶子 \(0\)。
+    \item 右侧 MIN 的第一个 MAX 节点中，子 MIN 看到叶子 \(3\) 后已有 \(\beta\le\alpha\)，剪去叶子 \(6\)。
+    \item 右侧 MIN 的第二个 MAX 节点中，先得到 \(9\)，已经有 \(\alpha\ge\beta\)，剪去叶子 \(7\)。
+    \item 右侧 MIN 的第三个 MAX 节点中，子 MIN 看到叶子 \(1\) 后满足 \(\beta\le\alpha\)，剪去叶子 \(5\)。
+\end{itemize}
+被剪掉的叶节点共 \(4\) 个。alpha-beta 剪枝不改变 minimax 值，根节点仍为 \(4\)，仍选择左分支。
+\end{solution}
+
+\item MCTS
+
+\begin{solution}
+UCB1 公式为
+\[
+U_{\mathrm{black}}(i)=\frac{w_i}{n_i}+c\sqrt{\frac{\ln N}{n_i}},
+\]
+\[
+U_{\mathrm{white}}(i)=1-\frac{w_i}{n_i}+c\sqrt{\frac{\ln N}{n_i}}.
+\]
+
+\textbf{(1) \(c=0.2\)}
+
+在根节点 \(s_0\)，\(N=40\)，黑方选择：
+\[
+\begin{array}{c|c}
+\toprule
+\text{子节点} & \text{UCB}\\
+\midrule
+s_1 & 0.917\\
+s_2 & 0.859\\
+s_3 & 0.511\\
+\bottomrule
+\end{array}
+\]
+所以先选 \(s_1\)。在 \(s_1\) 处轮到白方选择，\(N=25\)：
+\[
+\begin{array}{c|c}
+\toprule
+\text{子节点} & \text{UCB}\\
+\midrule
+s_4 & 0.541\\
+s_5 & 0.564\\
+s_6 & 0.093\\
+\bottomrule
+\end{array}
+\]
+因此选择 \(s_5\)，Selection 路径为
+\[
+s_0\rightarrow s_1\rightarrow s_5.
+\]
+扩展 \(e_1\)，若模拟结果为黑方获胜，则回传后
+\[
+s_0:29/40\rightarrow 30/41,
+\]
+\[
+s_1:21/25\rightarrow 22/26,
+\]
+\[
+s_5:4/7\rightarrow 5/8,
+\]
+\[
+e_1:1/1.
+\]
+
+\textbf{(2) \(c=1.2\)}
+
+在根节点 \(s_0\)：
+\[
+\begin{array}{c|c}
+\toprule
+\text{子节点} & \text{UCB}\\
+\midrule
+s_1 & 1.301\\
+s_2 & 1.585\\
+s_3 & 1.190\\
+\bottomrule
+\end{array}
+\]
+所以选择 \(s_2\)。在 \(s_2\) 处轮到白方选择，\(N=7\)：
+\[
+\begin{array}{c|c}
+\toprule
+\text{子节点} & \text{UCB}\\
+\midrule
+s_7 & 1.674\\
+s_8 & 1.087\\
+s_9 & 1.684\\
+\bottomrule
+\end{array}
+\]
+因此选择 \(s_9\)，Selection 路径为
+\[
+s_0\rightarrow s_2\rightarrow s_9.
+\]
+扩展 \(e_2\)，若模拟结果为黑方获胜，则回传后
+\[
+s_0:29/40\rightarrow 30/41,
+\]
+\[
+s_2:5/7\rightarrow 6/8,
+\]
+\[
+s_9:1/2\rightarrow 2/3,
+\]
+\[
+e_2:1/1.
+\]
+
+\textbf{(3) 探索系数比较}
+
+\(c=0.2\) 时探索项较小，选择更偏向当前胜率高的节点，所以走到
+\[
+s_0\rightarrow s_1\rightarrow s_5.
+\]
+\(c=1.2\) 时探索项较大，访问次数少的节点会得到更高加成，所以走到
+\[
+s_0\rightarrow s_2\rightarrow s_9.
+\]
+因此 \(c\) 越大，MCTS 在 Selection 阶段越偏探索；\(c\) 越小，越偏利用当前估计胜率。
+\end{solution}
+
+\end{enumerate}
+\end{document}

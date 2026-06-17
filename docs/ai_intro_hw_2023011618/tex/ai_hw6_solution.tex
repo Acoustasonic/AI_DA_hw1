@@ -1,0 +1,343 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{proofname=\heiti{证明}}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+
+% 若本地有课程模板 iidef.sty，则优先使用；
+% 若没有，则使用备用定义，保证文件尽量可以直接编译。
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 6]{iidef}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 6 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item CNN 输出尺寸与参数量
+\begin{solution}
+\textbf{(1) 计算卷积层 1 和卷积层 2 输出特征图的尺寸}
+
+对卷积层或池化层，若输入空间尺寸为 $H_{\mathrm{in}}\times W_{\mathrm{in}}$，卷积核或窗口大小为 $K$，填充为 $P$，步长为 $S$，则输出空间尺寸为
+\[
+H_{\mathrm{out}}
+=
+\left\lfloor
+\frac{H_{\mathrm{in}}+2P-K}{S}
+\right\rfloor+1,
+\qquad
+W_{\mathrm{out}}
+=
+\left\lfloor
+\frac{W_{\mathrm{in}}+2P-K}{S}
+\right\rfloor+1.
+\]
+
+卷积层 1 的输入为 $32\times 32\times 3$，卷积核空间大小为 $5\times 5$，步长 $S=1$，填充 $P=2$，因此
+\[
+H_{\mathrm{out}}
+=
+\left\lfloor
+\frac{32+2\times 2-5}{1}
+\right\rfloor+1
+=
+32,
+\]
+\[
+W_{\mathrm{out}}
+=
+\left\lfloor
+\frac{32+2\times 2-5}{1}
+\right\rfloor+1
+=
+32.
+\]
+卷积核数量为 $16$，所以卷积层 1 的输出特征图尺寸为
+\[
+32\times 32\times 16.
+\]
+
+接着经过最大池化层。池化层输入为 $32\times 32\times 16$，窗口大小 $2\times 2$，步长 $2$，不额外填充，因此
+\[
+H_{\mathrm{out}}
+=
+\left\lfloor
+\frac{32-2}{2}
+\right\rfloor+1
+=
+16,
+\]
+\[
+W_{\mathrm{out}}
+=
+\left\lfloor
+\frac{32-2}{2}
+\right\rfloor+1
+=
+16.
+\]
+池化层不改变通道数，因此池化层输出为
+\[
+16\times 16\times 16=4096.
+\]
+
+卷积层 2 的输入为 $16\times 16\times 16$，卷积核空间大小为 $3\times 3$，步长 $S=1$，填充 $P=1$，所以
+\[
+H_{\mathrm{out}}
+=
+\left\lfloor
+\frac{16+2\times 1-3}{1}
+\right\rfloor+1
+=
+16,
+\]
+\[
+W_{\mathrm{out}}
+=
+\left\lfloor
+\frac{16+2\times 1-3}{1}
+\right\rfloor+1
+=
+16.
+\]
+卷积层 2 的卷积核数量为 $32$，因此卷积层 2 的输出特征图尺寸为
+\[
+16\times 16\times 32=8192.
+\]
+
+\textbf{(2) 计算卷积层 1 的可训练参数数量，并与直接展平输入连接到全连接层的参数数量进行比较}
+
+卷积层 1 中每个卷积核大小为 $5\times 5\times 3$，因此每个卷积核的权重参数数量为
+\[
+5\times 5\times 3=75.
+\]
+卷积层 1 共有 $16$ 个卷积核，所以权重参数总数为
+\[
+75\times 16=1200.
+\]
+若每个输出通道对应一个偏置参数，则偏置参数数量为 16.
+
+因此卷积层 1 的可训练参数总数为
+\[
+1200+16=1216.
+\]
+
+\textbf{(3) 直接展平输入并连接到 128 个神经元的全连接层}
+
+原始输入图像大小为 $32\times 32\times 3$，展平后的一维向量维度为
+\[
+32\times 32\times 3=3072.
+\]
+如果将该向量连接到一个具有 $128$ 个神经元的全连接层，则权重参数数量为
+\[
+3072\times 128=393216.
+\]
+每个神经元有一个偏置参数，因此偏置参数数量为128.
+
+于是该全连接层的可训练参数总数为
+\[
+393216+128=393344.
+\]
+
+与卷积层 1 的参数数量 $1216$ 相比，全连接层的参数数量明显更多。二者的比值为
+\[
+\frac{393344}{1216}\approx 323.47.
+\]
+可见卷积层通过局部连接和权重共享，大幅减少了模型参数量。
+\end{solution}
+
+\item 感受野与空洞卷积
+
+\begin{solution}
+考虑计算下面两个量：
+\begin{itemize}
+    \item $r_l$：第 $l$ 层一个神经元在原始输入图像上的感受野大小；
+    \item $j_l$：第 $l$ 层相邻两个神经元在原始输入图像上对应位置的间隔。
+\end{itemize}
+
+初始化输入层为
+\[
+r_0=1,\qquad j_0=1.
+\]
+对于普通卷积或池化层，若卷积核或窗口大小为 $k_l$，步长为 $s_l$，则
+\[
+r_l=r_{l-1}+(k_l-1)j_{l-1},
+\]
+\[
+j_l=j_{l-1}s_l.
+\]
+填充会影响特征图的边界位置和尺寸，但不改变单个神经元理论感受野的大小。
+
+\textbf{(1) 计算 C2 输出特征图上一个神经元在原始输入图像上的感受野大小}
+
+首先经过卷积层 C1。C1 的卷积核大小为 $5\times 5$，步长为 $1$，所以
+\[
+r_{\mathrm{C1}}
+=
+r_0+(5-1)j_0
+=
+1+4\times 1
+=
+5,
+\]
+\[
+j_{\mathrm{C1}}
+=
+j_0\times 1
+=
+1.
+\]
+因此，C1 输出层一个神经元在原始图像上的感受野为 $5\times 5$。
+
+接着经过池化层 P1。P1 的窗口大小为 $2\times 2$，步长为 $2$，所以
+\[
+r_{\mathrm{P1}}
+=
+r_{\mathrm{C1}}+(2-1)j_{\mathrm{C1}}
+=
+5+1\times 1
+=
+6,
+\]
+\[
+j_{\mathrm{P1}}
+=
+j_{\mathrm{C1}}\times 2
+=
+2.
+\]
+
+最后经过卷积层 C2。C2 的卷积核大小为 $3\times 3$，步长为 $1$，所以
+\[
+r_{\mathrm{C2}}
+=
+r_{\mathrm{P1}}+(3-1)j_{\mathrm{P1}}
+=
+6+2\times 2
+=
+10,
+\]
+\[
+j_{\mathrm{C2}}
+=
+j_{\mathrm{P1}}\times 1
+=
+2.
+\]
+因此，C2 输出特征图上的一个神经元在原始输入图像上的感受野大小为
+\[
+10\times 10=100.
+\]
+
+\textbf{(2) 若去掉池化层 P1，C2 输出神经元的感受野大小}
+
+如果去掉池化层 P1，则网络结构变为 C1 直接连接 C2.
+
+C1 部分不变：
+\[
+r_{\mathrm{C1}}=5,\qquad j_{\mathrm{C1}}=1.
+\]
+然后直接经过 C2。C2 的卷积核大小为 $3\times 3$，步长为 $1$，所以
+\[
+r_{\mathrm{C2}}
+=
+r_{\mathrm{C1}}+(3-1)j_{\mathrm{C1}}
+=
+5+2\times 1
+=
+7,
+\]
+\[
+j_{\mathrm{C2}}
+=
+j_{\mathrm{C1}}\times 1
+=
+1.
+\]
+因此去掉池化层后，C2 输出神经元的感受野大小为
+\[
+7\times 7=49.
+\]
+
+可以看到，有池化层时感受野为 $10\times 10$，没有池化层时为 $7\times 7$。池化层虽然本身没有可训练参数，但它有窗口大小和步长。窗口大小会直接扩大当前层的感受野，步长大于 $1$ 则会增大后续层相邻神经元在原始图像中的间隔，使后续卷积层每增加一层时感受野增长得更快。因此，池化层通常会加速感受野的扩大。
+
+\textbf{(3) 将 C2 改为空洞率为 2 的空洞卷积时的感受野大小}
+
+空洞卷积的有效卷积核大小为
+\[
+k_{\mathrm{eff}}
+=
+k+(k-1)(d-1),
+\]
+其中 $k$ 是原始卷积核大小，$d$ 是空洞率。
+
+本题中 C2 的卷积核大小仍为 $3\times 3$，空洞率为 $d=2$，因此一维方向上的有效卷积核大小为
+\[
+k_{\mathrm{eff}}
+=
+3+(3-1)(2-1)
+=
+5.
+\]
+也就是说，一个 $3\times 3$、空洞率为 $2$ 的空洞卷积在空间覆盖范围上等价于一个 $5\times 5$ 的采样范围，但实际参数量仍然是 $3\times 3$ 个卷积核位置对应的参数。
+
+保持原结构，即仍然有 C1 和 P1。前两层的感受野计算结果仍为
+\[
+r_{\mathrm{P1}}=6,\qquad j_{\mathrm{P1}}=2.
+\]
+现在 C2 使用有效卷积核大小 $k_{\mathrm{eff}}=5$，步长仍为 $1$，所以
+\[
+r_{\mathrm{C2}}
+=
+r_{\mathrm{P1}}+(k_{\mathrm{eff}}-1)j_{\mathrm{P1}}
+=
+6+(5-1)\times 2
+=
+14.
+\]
+因此此时 C2 输出神经元在原始输入图像上的感受野大小为
+\[
+14\times 14=196.
+\]
+
+相比普通 $3\times 3$ 卷积得到的 $10\times 10$ 感受野，空洞率为 $2$ 的空洞卷积可以在不增加卷积核参数数量的情况下，把该层输出神经元的感受野扩大到 $14\times 14$。
+\end{solution}
+
+\end{enumerate}
+
+\end{document}

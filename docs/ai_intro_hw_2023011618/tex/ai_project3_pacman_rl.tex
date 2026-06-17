@@ -1,0 +1,140 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\geometry{left=2.4cm,right=2.4cm,top=2.4cm,bottom=2.4cm}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue}
+
+\title{人工智能原理项目3：Pac-Man 强化学习}
+\author{姓名：杜一郎 \quad 学号：2023011618}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{问题建模}
+
+题目给定一个 \(5\times5\) Pac-Man 网格环境。Pac-Man 初始位置为 \((0,0)\)，终点为 \((4,4)\)。两颗豆子位于 \((0,2)\)、\((2,3)\)，三个静止幽灵位于 \((1,2)\)、\((2,1)\)、\((3,3)\)。动作集合为
+\[
+A=\{\text{上},\text{下},\text{左},\text{右}\}.
+\]
+如果动作越界，Pac-Man 停在原地并受到撞墙惩罚。
+
+\section{状态与转移概率}
+
+原模板只返回当前位置编号，但吃豆子会改变后续奖励。如果只用位置作为状态，同一个格子在“豆子已吃”和“豆子未吃”时会被合并。所以代码把状态扩展为
+\[
+s=(row,col,bean\_mask),
+\]
+其中 \(bean\_mask\) 用两位二进制记录两颗豆子是否已经被吃掉。最多状态数为
+\[
+25\times4=100.
+\]
+
+环境是确定性的。对任意状态 \(s\) 和动作 \(a\)，代码中的 \texttt{transition(state, action)} 会给出唯一后继状态 \(s'\)。因此转移概率为
+\[
+P(s'|s,a)=1,
+\]
+其他后继状态的概率为
+\[
+P(\tilde{s}|s,a)=0,\qquad \tilde{s}\ne s'.
+\]
+终止状态包括撞到幽灵，以及到达终点。
+
+\section{奖励函数}
+
+\begin{table}[H]
+\centering
+\caption{奖励设置}
+\begin{tabular}{lr}
+\toprule
+情况 & 奖励\\
+\midrule
+普通移动 & -1\\
+撞墙 & -10\\
+吃到新豆子 & +10\\
+撞幽灵 & -100\\
+吃完豆子后到达终点 & +100\\
+未吃完豆子就到达终点 & 额外 -20\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+普通移动给负奖励，这样策略会更偏向短路径；幽灵惩罚较大，避免策略为了吃豆子走进危险格。
+
+\section{值迭代}
+
+值迭代使用 Bellman 最优方程：
+\[
+V(s)=\max_a\left[R(s,a,s')+\gamma V(s')\right].
+\]
+因为这个地图可以直接枚举转移，所以对每个非终止状态计算四个动作的动作价值，取最大值更新 \(V(s)\)，并记录对应动作作为策略。参数取
+\[
+\gamma=0.9,\qquad \theta=10^{-8}.
+\]
+
+\section{Monte Carlo 控制}
+
+无模型方法使用 first-visit Monte Carlo control。每个 episode 从起点开始，按 epsilon-greedy 策略选择动作。回合结束后，从后往前计算折扣回报
+\[
+G_t=R_{t+1}+\gamma R_{t+2}+\gamma^2R_{t+3}+\cdots,
+\]
+并只对第一次出现的 \((s,a)\) 更新平均回报。训练结束后，对每个状态取 \(Q(s,a)\) 最大的动作作为贪心策略。参数为
+\[
+\text{episodes}=3000,\quad \epsilon_0=0.2,\quad \epsilon_{\min}=0.02,\quad \gamma=0.9.
+\]
+
+\section{实验结果}
+
+运行命令为
+\begin{verbatim}
+cd question_sets\ai_intro_hw\11_项目3_RL_PacMan\codes
+python .\Pac-Man.py --episodes 3000 --output-dir ..\project3_outputs
+\end{verbatim}
+
+值迭代得到的路径如下：
+\[
+(0,0)\rightarrow(0,1)\rightarrow(0,2)\rightarrow(0,3)\rightarrow(1,3)
+\rightarrow(2,3)\rightarrow(2,4)\rightarrow(3,4)\rightarrow(4,4).
+\]
+动作序列为
+\[
+\text{右}\rightarrow\text{右}\rightarrow\text{右}\rightarrow\text{下}
+\rightarrow\text{下}\rightarrow\text{右}\rightarrow\text{下}\rightarrow\text{下}.
+\]
+逐步奖励为
+\[
+-1,\ 9,\ -1,\ -1,\ 9,\ -1,\ -1,\ 99,
+\]
+总奖励为
+\[
+112.
+\]
+Monte Carlo 训练 3000 个 episode 后，最终贪心策略也得到同一条路径和同一总奖励。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{question_sets/ai_intro_hw/11_项目3_RL_PacMan/project3_outputs/learning_curves.png}
+\caption{值迭代收敛曲线与 Monte Carlo 回报曲线。}
+\end{figure}
+
+左图中 Bellman 更新量下降很快，说明值迭代在这个小状态空间里很快就收敛了。右图是 Monte Carlo 的 100-episode 平均回报，前期波动较大，后期稳定到较高回报附近。代码中记录了 episode reward，没有单独记录每一局的路径长度；最终贪心路径长度为 8 步。
+
+\section{学习过程视频}
+
+目录中保留了 \texttt{question\_sets/ai\_intro\_hw/11\_项目3\_RL\_PacMan/Pac-Man.mp4}，作为学习过程或策略演示附件。PDF 报告里不直接嵌入视频，提交时和报告、代码一起打包。
+
+\section{AI 工具使用说明}
+
+写报告时使用了 AI 工具辅助整理内容、检查题目覆盖情况和修改文字表述。环境建模、奖励设计、值迭代、Monte Carlo 控制和实验结果都来自本地代码与运行输出，提交前由本人复核。
+
+\section{小结}
+
+值迭代依赖完整环境模型，可以稳定求出最优策略。Monte Carlo control 不需要显式转移模型，但要通过 episode 采样慢慢估计 \(Q(s,a)\)。在这个 \(5\times5\) 地图上，两种方法最后都找到同一条 8 步路径：避开幽灵、吃完两颗豆子，再到达终点。
+
+\end{document}

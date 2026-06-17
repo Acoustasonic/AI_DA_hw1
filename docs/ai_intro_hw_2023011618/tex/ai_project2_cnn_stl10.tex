@@ -1,0 +1,166 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{url}
+\geometry{left=2.4cm,right=2.4cm,top=2.4cm,bottom=2.4cm}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue}
+
+\title{人工智能原理课程项目2：CNN 图像分类}
+\author{姓名：杜一郎 \quad 学号：2023011618}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{任务与数据}
+
+这次任务是在 STL10 数据集上做 10 类图像分类，并比较数据增强、激活函数、池化、Dropout 和 Batch Normalization 等设置。数据目录中训练集 7000 张、测试集 1000 张，每类训练样本 700 张、测试样本 100 张，图片为 \(96\times96\) RGB 图像。
+
+代码放在 \texttt{question\_sets/ai\_intro\_hw/08\_project2\_scripts/stl10\_cnn\_experiment.py}，结果保存在 \texttt{question\_sets/ai\_intro\_hw/08\_project2\_results/cnn\_stl10}。本机 CPU 训练比较慢，所以输入统一缩放到 \(48\times48\)，每组只训练 3 个 epoch。这样能跑完对照实验，但精度不能和长时间训练的模型相比。
+
+\section{方法}
+
+程序使用自定义 \texttt{ImageFolderDataset} 读取 PNG 图片，不依赖 \texttt{torchvision}。训练增强包括随机裁剪和随机水平翻转，测试阶段使用中心裁剪。归一化均值为
+\[
+(0.4467,0.4398,0.4066),
+\]
+标准差为
+\[
+(0.2603,0.2566,0.2713).
+\]
+
+网络由四个卷积块组成，每个卷积块包含 \(3\times3\) 卷积、可选 Batch Normalization、激活函数和池化层。最后使用全局平均池化、Dropout 和全连接层输出 10 类 logits：
+\[
+\mathrm{Conv}(3,32)\rightarrow \mathrm{Conv}(32,64)\rightarrow
+\mathrm{Conv}(64,128)\rightarrow \mathrm{Conv}(128,256)\rightarrow
+\mathrm{GAP}\rightarrow \mathrm{Linear}(256,10).
+\]
+损失函数为交叉熵，优化器为 Adam，学习率 \(10^{-3}\)，权重衰减 \(10^{-4}\)，学习率调度使用 CosineAnnealingLR。
+
+\section{对照实验}
+
+四组实验如下。基线只用 ReLU 和 MaxPool；其余三组分别看增强加正则化、Tanh+AvgPool 和 Sigmoid 激活。这里不是严格的单变量消融，尤其是最好的一组同时加入了增强、BN 和 Dropout，所以结论只对应这几组组合设置。
+
+\begin{table}[H]
+\centering
+\caption{实验设置}
+\small
+\begin{tabular}{lccccc}
+\toprule
+实验名称 & 激活函数 & 池化 & BatchNorm & Dropout & 数据增强\\
+\midrule
+\texttt{baseline\_relu\_max} & ReLU & Max & 否 & 0.00 & 否\\
+\texttt{aug\_bn\_dropout\_relu\_max} & ReLU & Max & 是 & 0.35 & 是\\
+\texttt{tanh\_avg\_bn\_dropout} & Tanh & Avg & 是 & 0.35 & 是\\
+\texttt{sigmoid\_max\_bn\_dropout} & Sigmoid & Max & 是 & 0.35 & 是\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{结果}
+
+\begin{table}[H]
+\centering
+\caption{测试集指标}
+\small
+\begin{tabular}{lccccc}
+\toprule
+实验名称 & Loss & Accuracy & Precision & Recall & F1-score\\
+\midrule
+\texttt{baseline\_relu\_max} & 1.5197 & 0.415 & 0.438 & 0.415 & 0.417\\
+\texttt{aug\_bn\_dropout\_relu\_max} & 1.2848 & 0.519 & 0.562 & 0.519 & 0.522\\
+\texttt{tanh\_avg\_bn\_dropout} & 1.7564 & 0.356 & 0.363 & 0.356 & 0.326\\
+\texttt{sigmoid\_max\_bn\_dropout} & 1.6959 & 0.344 & 0.395 & 0.344 & 0.319\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表现最好的是 \texttt{aug\_bn\_dropout\_relu\_max}，Accuracy 为 0.519，宏平均 F1 为 0.522。它比基线高一些，但这部分提升不能单独归因到某一个技巧，因为增强、BN 和 Dropout 是一起加进去的。Tanh+AvgPool 和 Sigmoid+MaxPool 的结果低于 ReLU+MaxPool；在这个浅层 CNN 上，Sigmoid/Tanh 训练更慢，AvgPool 也会削弱一部分局部强响应。
+
+\begin{table}[H]
+\centering
+\caption{最佳模型逐类指标}
+\small
+\begin{tabular}{lccc}
+\toprule
+类别 & Precision & Recall & F1-score\\
+\midrule
+airplane & 0.756 & 0.650 & 0.699\\
+bird & 0.394 & 0.540 & 0.456\\
+car & 0.785 & 0.620 & 0.693\\
+cat & 0.419 & 0.360 & 0.387\\
+deer & 0.518 & 0.440 & 0.476\\
+dog & 0.380 & 0.350 & 0.365\\
+horse & 0.767 & 0.460 & 0.575\\
+monkey & 0.358 & 0.590 & 0.445\\
+ship & 0.503 & 0.800 & 0.618\\
+truck & 0.745 & 0.380 & 0.503\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+混淆矩阵如下，行是真实类别，列是预测类别，类别顺序为 airplane、bird、car、cat、deer、dog、horse、monkey、ship、truck。
+
+\begin{table}[H]
+\centering
+\caption{最佳模型混淆矩阵}
+\scriptsize
+\begin{tabular}{lrrrrrrrrrr}
+\toprule
+ & air & bird & car & cat & deer & dog & horse & monkey & ship & truck\\
+\midrule
+airplane & 65 & 6 & 2 & 0 & 0 & 0 & 1 & 1 & 21 & 4\\
+bird & 5 & 54 & 0 & 5 & 4 & 5 & 0 & 27 & 0 & 0\\
+car & 2 & 6 & 62 & 3 & 0 & 2 & 2 & 1 & 15 & 7\\
+cat & 0 & 19 & 0 & 36 & 5 & 11 & 0 & 28 & 1 & 0\\
+deer & 0 & 10 & 2 & 11 & 44 & 7 & 5 & 21 & 0 & 0\\
+dog & 0 & 16 & 0 & 11 & 15 & 35 & 5 & 17 & 1 & 0\\
+horse & 0 & 7 & 0 & 4 & 11 & 20 & 46 & 9 & 3 & 0\\
+monkey & 0 & 11 & 0 & 13 & 5 & 12 & 0 & 59 & 0 & 0\\
+ship & 8 & 5 & 2 & 1 & 1 & 0 & 0 & 1 & 80 & 2\\
+truck & 6 & 3 & 11 & 2 & 0 & 0 & 1 & 1 & 38 & 38\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+airplane、car 和 ship 的 F1 较高。动物类之间混淆比较多，尤其 cat、dog、monkey 经常互相误判。truck 的 precision 较高但 recall 只有 0.380，说明模型预测 truck 时比较谨慎，但漏掉了不少真实 truck，其中 38 张被判成 ship。
+
+\section{Grad-CAM}
+
+对最佳模型最后一个卷积层做 Grad-CAM，选取三张样本如下。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.30\textwidth]{question_sets/ai_intro_hw/08_project2_results/cnn_stl10/aug_bn_dropout_relu_max/gradcam/png/gradcam_0000_airplane_pred_ship.png}
+\includegraphics[width=0.30\textwidth]{question_sets/ai_intro_hw/08_project2_results/cnn_stl10/aug_bn_dropout_relu_max/gradcam/png/gradcam_0332_cat_pred_cat.png}
+\includegraphics[width=0.30\textwidth]{question_sets/ai_intro_hw/08_project2_results/cnn_stl10/aug_bn_dropout_relu_max/gradcam/png/gradcam_0830_ship_pred_ship.png}
+\caption{Grad-CAM 示例。左：airplane 被预测为 ship；中：cat 正确分类；右：ship 正确分类。}
+\end{figure}
+
+从图上看，正确分类的 cat 和 ship 样本中，响应主要落在目标主体附近。误分类的 airplane 样本里，热区覆盖了大面积蓝色背景和细长主体，这也对应混淆矩阵中 airplane 被判成 ship 的情况。
+
+\section{局限}
+
+这次没有单独划分验证集，训练脚本每轮直接在测试集上评估，并按测试集 F1 保存最佳模型。所以表中数值适合作为课程项目内的对照结果，不应当写成严格的泛化性能。另一个限制是训练只有 3 个 epoch，输入也从 \(96\times96\) 降到 \(48\times48\)，动物类细节损失比较大。
+
+\section{AI 工具使用说明}
+
+写报告时使用了 AI 工具帮助整理结构、检查表述和排版问题。代码实现、实验设置、运行结果和指标解释都按本地脚本与输出文件核对过，最后的内容由本人修改确认。
+
+\section{复现方式}
+
+\begin{verbatim}
+python .\question_sets\ai_intro_hw\08_project2_scripts\stl10_cnn_experiment.py ^
+  --preset main --epochs 3 --batch-size 64 --image-size 48 ^
+  --data-dir .\question_sets\ai_intro_hw\08_项目2_CNN_STL10\STL10 ^
+  --output-dir .\question_sets\ai_intro_hw\08_project2_results\cnn_stl10 ^
+  --gradcam
+\end{verbatim}
+
+\end{document}

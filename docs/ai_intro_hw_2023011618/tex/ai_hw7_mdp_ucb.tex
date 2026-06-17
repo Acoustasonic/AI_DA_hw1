@@ -1,0 +1,144 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{proofname=\heiti{证明}}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{graphicx}
+
+% 若本地有课程模板 iidef.sty，则优先使用；
+% 若没有，则使用备用定义，保证文件尽量可以直接编译。
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 7]{iidef}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 7 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item \textbf{UCB1}
+
+\begin{solution}
+\begin{enumerate}[label=(\arabic*)]
+\item UCB1 的选择公式可以写为
+\[
+A_{t+1}=\arg\max_a\left[Q_t(a)+c\sqrt{\frac{\ln t}{N_t(a)}}\right].
+\]
+其中 $Q_t(a)$ 是动作 $a$ 在已有 $t$ 次尝试后的样本平均回报估计，$N_t(a)$ 是动作 $a$ 已被选择的次数，$c$ 是探索系数。若某个动作尚未被选择，一般令其 UCB 值为 $+\infty$，以保证该动作至少被探索一次。
+
+上式中，$Q_t(a)$ 反映当前对动作收益的估计，数值越大表示越倾向于利用已经表现较好的动作；$c\sqrt{\ln t/N_t(a)}$ 是探索项，动作被选择次数 $N_t(a)$ 越少，该项越大，从而鼓励算法尝试不确定性较高的动作。随着总尝试次数 $t$ 增大，$\ln t$ 使探索需求缓慢增加；随着某个动作被反复选择，$N_t(a)$ 增大，该动作的探索加成会下降。因此 UCB1 在利用高平均回报动作和探索低访问次数动作之间进行动态平衡。
+
+\item 已知
+\[
+k=3,\qquad t=10,\qquad c=1.5,
+\]
+以及
+\[
+N_{10}(a_1)=5,\ Q_{10}(a_1)=1.2,
+\]
+\[
+N_{10}(a_2)=3,\ Q_{10}(a_2)=1.8,
+\]
+\[
+N_{10}(a_3)=2,\ Q_{10}(a_3)=1.0.
+\]
+
+由于第 11 步决策前已经完成了前 10 次尝试，因此代入 $t=10$ 得
+\[
+\mathrm{UCB}(a_1)=1.2+1.5\sqrt{\frac{\ln 10}{5}}\approx 2.2179,
+\]
+\[
+\mathrm{UCB}(a_2)=1.8+1.5\sqrt{\frac{\ln 10}{3}}\approx 3.1141,
+\]
+\[
+\mathrm{UCB}(a_3)=1.0+1.5\sqrt{\frac{\ln 10}{2}}\approx 2.6095.
+\]
+
+\begin{center}
+\begin{tabular}{lr}
+\toprule
+动作 & UCB \\
+\midrule
+$a_1$ & 2.2179 \\
+$a_2$ & 3.1141 \\
+$a_3$ & 2.6095 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+因此第 11 步应选择 $a_2$。
+
+\item 无偏样本平均的增量更新公式为
+\[
+Q_{n+1}(a)=Q_n(a)+\frac{1}{N_{n+1}(a)}\bigl(R_{n+1}-Q_n(a)\bigr),
+\]
+其中 $N_{n+1}(a)=N_n(a)+1$。第 11 步选择的是 $a_2$，并且得到回报 $R_{11}=2.4$，所以
+\[
+N_{11}(a_2)=N_{10}(a_2)+1=4,
+\]
+\[
+\begin{aligned}
+Q_{11}(a_2)
+&=Q_{10}(a_2)+\frac{1}{N_{11}(a_2)}\bigl(R_{11}-Q_{10}(a_2)\bigr)\\
+&=1.8+\frac{1}{4}(2.4-1.8)=1.95.
+\end{aligned}
+\]
+其余动作在第 11 步未被选择，因此统计参数保持不变：
+\[
+N_{11}(a_1)=5,\quad Q_{11}(a_1)=1.2,
+\]
+\[
+N_{11}(a_3)=2,\quad Q_{11}(a_3)=1.0.
+\]
+
+在第 12 步决策前，所有动作的最新统计参数为：
+\begin{center}
+\begin{tabular}{lrr}
+\toprule
+动作 & $N_{11}$ & $Q_{11}$ \\
+\midrule
+$a_1$ & 5 & 1.20 \\
+$a_2$ & 4 & 1.95 \\
+$a_3$ & 2 & 1.00 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{enumerate}
+\end{solution}
+
+\end{enumerate}
+\end{document}

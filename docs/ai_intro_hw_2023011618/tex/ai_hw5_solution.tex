@@ -1,0 +1,355 @@
+\documentclass[a4paper]{article}
+\usepackage{ctex}
+\ctexset{
+proofname = \heiti{证明}
+}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{moreenum}
+\usepackage{mathtools}
+\usepackage{url}
+\usepackage{bm}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage[mathcal]{eucal}
+\usepackage{array}
+
+% 若本地有课程模板 iidef.sty，则优先使用；
+% 若没有，则使用下面的简单备用定义，保证文件尽量可以直接编译。
+\IfFileExists{iidef.sty}{
+    \usepackage[thehwcnt = 5]{iidef}
+
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+}{
+    \makeatletter
+    \newcommand{\thecourseinstitute}[1]{\def\@courseinstitute{#1}}
+    \newcommand{\thecoursename}[1]{\def\@coursename{#1}}
+    \newcommand{\theterm}[1]{\def\@term{#1}}
+    \newcommand{\hwname}[1]{\def\@hwname{#1}}
+    \newcommand{\slname}[1]{\def\@slname{#1}}
+    \thecourseinstitute{清华大学}
+    \thecoursename{人工智能原理}
+    \theterm{2026年春季学期}
+    \hwname{作业}
+    \slname{\heiti{解}}
+    \newcommand{\courseheader}{
+        \begin{center}
+            {\Large \heiti \@courseinstitute \quad \@coursename}\\[0.5em]
+            {\large \@term \quad \@hwname 5 \quad \@slname}
+        \end{center}
+        \vspace{1em}
+    }
+    \newcommand{\name}[1]{\noindent #1 \par\vspace{1em}}
+    \newenvironment{solution}{\par\noindent\textbf{解：}\par}{\par}
+    \makeatother
+}
+
+\begin{document}
+\courseheader
+\name{姓名：杜一郎\qquad 学号：2023011618}
+
+\begin{enumerate}
+\setlength{\itemsep}{3\parskip}
+
+\item 两层感知机实现 XNOR
+\begin{solution}
+\textbf{(a)}
+
+XNOR 的真值表如下：
+\[
+\begin{array}{ccc}
+\toprule
+x_1 & x_2 & x_1 \operatorname{XNOR} x_2\\
+\midrule
+0 & 0 & 1\\
+0 & 1 & 0\\
+1 & 0 & 0\\
+1 & 1 & 1\\
+\bottomrule
+\end{array}
+\]
+
+从真值表可以看出，XNOR 在两种情况下输出为 $1$：一种是 $x_1=x_2=1$，另一种是 $x_1=x_2=0$。因此它可以分解为
+\[
+x_1 \operatorname{XNOR} x_2
+=
+(x_1\land x_2)\lor(\lnot x_1\land \lnot x_2).
+\]
+
+
+\textbf{(b)}
+
+令输入向量为
+\[
+\bm{x}=
+\begin{bmatrix}
+x_1\\
+x_2
+\end{bmatrix}.
+\]
+隐藏层输出为
+\[
+\bm{h}=f\left(W^{(1)}\bm{x}+\bm{b}^{(1)}\right),
+\]
+输出层为
+\[
+\hat{y}=f\left(W^{(2)}\bm{h}+b^{(2)}\right).
+\]
+
+取隐藏层权重和偏置为
+\[
+W^{(1)}
+=
+\begin{bmatrix}
+1 & 1\\
+-1 & -1
+\end{bmatrix},
+\qquad
+\bm{b}^{(1)}
+=
+\begin{bmatrix}
+-1.5\\
+0.5
+\end{bmatrix}.
+\]
+因此隐藏层两个神经元分别为
+\[
+h_1=f(x_1+x_2-1.5),
+\]
+\[
+h_2=f(-x_1-x_2+0.5).
+\]
+其中，$h_1$ 实现 $x_1\land x_2$，$h_2$ 实现 $\lnot x_1\land \lnot x_2$。
+
+输出层取
+\[
+W^{(2)}
+=
+\begin{bmatrix}
+1 & 1
+\end{bmatrix},
+\qquad
+b^{(2)}=-0.5.
+\]
+于是
+\[
+\hat{y}=f(h_1+h_2-0.5).
+\]
+这相当于对 $h_1$ 和 $h_2$ 做 OR 运算。
+
+\textbf{(c)}
+
+对四种输入逐一计算，得到下表：
+\[
+\begin{array}{cccccccc}
+\toprule
+x_1 & x_2 & z_1^{(1)}=x_1+x_2-1.5 & h_1
+& z_2^{(1)}=-x_1-x_2+0.5 & h_2
+& z^{(2)}=h_1+h_2-0.5 & \hat{y}\\
+\midrule
+0 & 0 & -1.5 & 0 & 0.5  & 1 & 0.5  & 1\\
+0 & 1 & -0.5 & 0 & -0.5 & 0 & -0.5 & 0\\
+1 & 0 & -0.5 & 0 & -0.5 & 0 & -0.5 & 0\\
+1 & 1 & 0.5  & 1 & -1.5 & 0 & 0.5  & 1\\
+\bottomrule
+\end{array}
+\]
+
+因此，该两层感知机的输出为
+\[
+\hat{y}=x_1\operatorname{XNOR}x_2,
+\]
+\end{solution}
+
+\item 两层网络的反向传播梯度
+\begin{solution}
+\textbf{(a)}
+
+由于 $w_{11}^{(1)}$ 只通过
+\[
+w_{11}^{(1)}\rightarrow z_1^{(1)}\rightarrow h_1\rightarrow z^{(2)}\rightarrow \hat{y}\rightarrow L
+\]
+这条路径影响损失函数，所以由链式法则有
+\[
+\frac{\partial L}{\partial w_{11}^{(1)}}
+=
+\frac{\partial L}{\partial \hat{y}}
+\cdot
+\frac{\partial \hat{y}}{\partial z^{(2)}}
+\cdot
+\frac{\partial z^{(2)}}{\partial h_1}
+\cdot
+\frac{\partial h_1}{\partial z_1^{(1)}}
+\cdot
+\frac{\partial z_1^{(1)}}{\partial w_{11}^{(1)}}.
+\]
+
+\[
+L=\frac{1}{2}(\hat{y}-y)^2,
+\]
+所以
+\[
+\frac{\partial L}{\partial \hat{y}}
+=
+\hat{y}-y.
+\]
+又因为
+\[
+\hat{y}=\sigma(z^{(2)}),
+\]
+并且
+\[
+\sigma'(z)=\sigma(z)\bigl(1-\sigma(z)\bigr),
+\]
+所以
+\[
+\frac{\partial \hat{y}}{\partial z^{(2)}}
+=
+\hat{y}(1-\hat{y}).
+\]
+由
+\[
+z^{(2)}
+=
+w_1^{(2)}h_1+w_2^{(2)}h_2+b^{(2)}
+\]
+可得
+\[
+\frac{\partial z^{(2)}}{\partial h_1}
+=
+w_1^{(2)}.
+\]
+由
+\[
+h_1=\sigma(z_1^{(1)})
+\]
+可得
+\[
+\frac{\partial h_1}{\partial z_1^{(1)}}
+=
+h_1(1-h_1).
+\]
+最后，由
+\[
+z_1^{(1)}
+=
+w_{11}^{(1)}x_1+w_{12}^{(1)}x_2+b_1^{(1)}
+\]
+可得
+\[
+\frac{\partial z_1^{(1)}}{\partial w_{11}^{(1)}}
+=
+x_1.
+\]
+
+将这些结果相乘得到
+\[
+\frac{\partial L}{\partial w_{11}^{(1)}}
+=
+(\hat{y}-y)\hat{y}(1-\hat{y})w_1^{(2)}h_1(1-h_1)x_1.
+\]
+
+
+\textbf{(b)}
+对第一个隐藏层神经元，
+\[
+z_1^{(1)}
+=
+0.5\times 1+0.5\times 0+0.5
+=
+1.
+\]
+因此
+\[
+h_1=\sigma(1)=\frac{1}{1+e^{-1}}\approx 0.7311.
+\]
+
+对第二个隐藏层神经元，
+\[
+z_2^{(1)}
+=
+0.5\times 1+0.5\times 0+0.5
+=
+1,
+\]
+所以
+\[
+h_2=\sigma(1)\approx 0.7311.
+\]
+
+再计算输出层：
+\[
+z^{(2)}
+=
+0.5h_1+0.5h_2+0.5.
+\]
+代入 $h_1=h_2\approx 0.7311$，得到
+\[
+z^{(2)}
+\approx
+0.5\times 0.7311+0.5\times 0.7311+0.5
+=
+1.2311.
+\]
+因此
+\[
+\hat{y}
+=
+\sigma(1.2311)
+\approx 0.7740.
+\]
+
+由上一问的梯度公式，
+\[
+\frac{\partial L}{\partial w_{11}^{(1)}}
+=
+(\hat{y}-y)\hat{y}(1-\hat{y})w_1^{(2)}h_1(1-h_1)x_1.
+\]
+逐项代入：
+\[
+\hat{y}-y
+=
+0.7740-1
+=
+-0.2260,
+\]
+\[
+\hat{y}(1-\hat{y})
+=
+0.7740(1-0.7740)
+\approx 0.1749,
+\]
+\[
+w_1^{(2)}=0.5,
+\]
+\[
+h_1(1-h_1)
+=
+0.7311(1-0.7311)
+\approx 0.1966,
+\]
+\[
+x_1=1.
+\]
+所以
+\[
+\frac{\partial L}{\partial w_{11}^{(1)}}
+\approx
+(-0.2260)\times 0.1749\times 0.5\times 0.1966\times 1.
+\]
+计算得
+\[
+\frac{\partial L}{\partial w_{11}^{(1)}}
+\approx -0.003886 \approx -0.0039.
+\]
+
+\end{solution}
+
+\end{enumerate}
+
+\end{document}
